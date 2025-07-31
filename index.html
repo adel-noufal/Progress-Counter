@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Progress Counter</title>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: Arial, sans-serif;
+      background: #fff;
+      color: #222;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      transition: background 1s;
+    }
+    h1 { margin: 24px 0 10px 0; font-size: 2.2rem; }
+    .sky {
+      position: relative;
+      width: 400px;
+      height: 180px;
+      background: linear-gradient(to top, #b3e0ff 0%, #fff 100%);
+      border-radius: 0 0 200px 200px/0 0 100px 100px;
+      overflow: hidden;
+      margin-bottom: 20px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.08);
+      transition: background 1s;
+    }
+    .sun {
+      position: absolute;
+      left: 50%;
+      width: 60px;
+      height: 60px;
+      margin-left: -30px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 60% 40%, #ffe066 70%, #ffb700 100%);
+      box-shadow: 0 0 40px 10px #ffe06699;
+      top: 120px;
+      transition: top 1.2s cubic-bezier(.4,1.6,.4,1), opacity 0.8s;
+      opacity: 1;
+    }
+    .sun.night {
+      opacity: 0;
+      top: 200px;
+    }
+    .sky.night {
+      background: linear-gradient(to top, #1a237e 0%, #3949ab 100%);
+    }
+    .stars {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 1s;
+    }
+    .sky.night .stars {
+      opacity: 1;
+    }
+    .star {
+      position: absolute;
+      width: 2px;
+      height: 2px;
+      background: #fff;
+      border-radius: 50%;
+      opacity: 0.8;
+    }
+    .person-container {
+      width: 180px;
+      height: 180px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 18px auto;
+      position: relative;
+    }
+    .person {
+      width: 120px;
+      height: 160px;
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      display: none;
+    }
+    .person.active { display: block; }
+    /* Person Animations (one per day) */
+    /* Day 1: Typing at laptop */
+    .person.day1 .arm-right {
+      animation: typing 0.5s infinite alternate;
+      transform-origin: 80px 90px;
+    }
+    @keyframes typing {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(-18deg); }
+    }
+    /* Day 2: Writing */
+    .person.day2 .arm-right {
+      animation: writing 0.7s infinite alternate;
+      transform-origin: 80px 90px;
+    }
+    @keyframes writing {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(-30deg); }
+    }
+    /* Day 3: Talking on phone */
+    .person.day3 .arm-left {
+      animation: phone 0.7s infinite alternate;
+      transform-origin: 40px 90px;
+    }
+    @keyframes phone {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(30deg); }
+    }
+    /* Day 4: Reading */
+    .person.day4 .book {
+      animation: bookmove 1s infinite alternate;
+    }
+    @keyframes bookmove {
+      0% { transform: translateY(0); }
+      100% { transform: translateY(-8px); }
+    }
+    /* Day 5: Presenting */
+    .person.day5 .arm-right {
+      animation: present 1s infinite alternate;
+      transform-origin: 80px 90px;
+    }
+    @keyframes present {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(-45deg); }
+    }
+    /* Day 6: Thinking */
+    .person.day6 .head {
+      animation: think 1.2s infinite alternate;
+      transform-origin: 60px 50px;
+    }
+    @keyframes think {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(-10deg); }
+    }
+    /* Day 7: Stretching */
+    .person.day7 .arm-left {
+      animation: stretch 1s infinite alternate;
+      transform-origin: 40px 90px;
+    }
+    @keyframes stretch {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(-40deg); }
+    }
+    /* Day 8: Listening to music */
+    .person.day8 .head {
+      animation: nod 0.7s infinite alternate;
+      transform-origin: 60px 50px;
+    }
+    @keyframes nod {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(10deg); }
+    }
+    /* Day 9: Facepalm */
+    .person.day9 .arm-right {
+      animation: facepalm 1s infinite alternate;
+      transform-origin: 80px 90px;
+    }
+    @keyframes facepalm {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(-60deg); }
+    }
+    /* Day 10: Celebrating */
+    .person.day10 .arm-left {
+      animation: celebrate 0.7s infinite alternate;
+      transform-origin: 40px 90px;
+    }
+    .person.day10 .arm-right {
+      animation: celebrate 0.7s infinite alternate-reverse;
+      transform-origin: 80px 90px;
+    }
+    @keyframes celebrate {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(-50deg); }
+    }
+    .progress-container {
+      margin-top: 10px;
+      width: 90%;
+      max-width: 400px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+    }
+    .progress-bar {
+      flex-grow: 1;
+      background-color: #eee;
+      border-radius: 20px;
+      overflow: hidden;
+      height: 18px;
+      box-shadow: 0 2px 8px #0001;
+    }
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #4caf50 60%, #8bc34a 100%);
+      width: 0%;
+      transition: width 0.5s;
+    }
+    .progress-text {
+      text-align: center;
+      margin: 10px 0 0 0;
+      font-size: 18px;
+      color: #333;
+    }
+    .buttons {
+      margin-top: 18px;
+    }
+    .buttons button {
+      margin: 0 10px;
+      padding: 10px 22px;
+      font-size: 16px;
+      border: none;
+      border-radius: 8px;
+      background: #1976d2;
+      color: white;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .buttons button:hover {
+      background: #0d47a1;
+    }
+    .buttons button:disabled {
+      background: #bbb;
+      cursor: not-allowed;
+    }
+    
+    .congrats-message {
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(255, 255, 255, 0.95);
+      padding: 20px 40px;
+      border-radius: 15px;
+      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
+      text-align: center;
+      z-index: 1000;
+      animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    .congrats-message h2 {
+      color: #2196F3;
+      font-size: 28px;
+      margin-bottom: 10px;
+    }
+
+    .congrats-message p {
+      color: #333;
+      font-size: 18px;
+    }
+
+    @keyframes popIn {
+      0% {
+        transform: translate(-50%, -50%) scale(0.5);
+        opacity: 0;
+      }
+      100% {
+        transform: translate(-50%, -50%) scale(1);
+        opacity: 1;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1 id="dayTitle">Day 1</h1>
+
+  <div class="sky" id="sky">
+    <div class="orbit-container">
+      <div class="earth" id="earth"></div>
+      <div class="sun-orbit" id="sunOrbit">
+        <div class="sun" id="sun"></div>
+      </div>
+      <div class="moon-orbit" id="moonOrbit">
+        <div class="moon" id="moon"></div>
+      </div>
+    </div>
+    <div class="stars" id="stars"></div>
+  </div>
+
+  <div class="person-container">
+    <!-- 10 SVG/CSS people, one per day, only one visible at a time -->
+    <svg class="person day1 active" id="person1" viewBox="0 0 120 160">
+      <ellipse cx="60" cy="50" rx="20" ry="22" fill="#ffe0b2" class="head"/>
+      <rect x="45" y="72" width="30" height="40" rx="12" fill="#1976d2"/>
+      <rect x="55" y="112" width="10" height="28" rx="5" fill="#888"/>
+      <rect x="30" y="90" width="16" height="10" rx="5" fill="#888" class="arm-left"/>
+      <rect x="74" y="90" width="16" height="10" rx="5" fill="#888" class="arm-right"/>
+      <rect x="50" y="100" width="20" height="8" rx="3" fill="#333"/>
+      <rect x="52" y="104" width="16" height="4" rx="2" fill="#222"/>
+    </svg>
+    <svg class="person day2" id="person2" viewBox="0 0 120 160">
+      <ellipse cx="60" cy="50" rx="20" ry="22" fill="#ffe0b2" class="head"/>
+      <rect x="45" y="72" width="30" height="40" rx="12" fill="#43a047"/>
+      <rect x="55" y="112" width="10" height="28" rx="5" fill="#888"/>
+      <rect x="30" y="90" width="16" height="10" rx="5" fill="#888" class="arm-left"/>
+      <rect x="74" y="90" width="16" height="10" rx="5" fill="#888" class="arm-right"/>
+      <rect x="85" y="95" width="8" height="3" rx="1.5" fill="#222"/>
+    </svg>
+    <svg class="person day3" id="person3" viewBox="0 0 120 160">
+      <ellipse cx="60" cy="50" rx="20" ry="22" fill="#ffe0b2" class="head"/>
+      <rect x="45" y="72" width="30" height="40" rx="12" fill="#fbc02d"/>
+      <rect x="55" y="112" width="10" height="28" rx="5" fill="#888"/>
+      <rect x="30" y="90" width="16" height="10" rx="5" fill="#888" class="arm-left"/>
+      <rect x="74" y="90" width="16" height="10" rx="5" fill="#888" class="arm-right"/>
+      <rect x="25" y="60" width="10" height="18" rx="5" fill="#222"/>
+    </svg>
+    <svg class="person day4" id="person4" viewBox="0 0 120 160">
+      <ellipse cx="60" cy="50" rx="20" ry="22" fill="#ffe0b2" class="head"/>
+      <rect x="45" y="72" width="30" height="40" rx="12" fill="#8e24aa"/>
+      <rect x="55" y="112" width="10" height="28" rx="5" fill="#888"/>
+      <rect x="30" y="90" width="16" height="10" rx="5" fill="#888" class="arm-left"/>
+      <rect x="74" y="90" width="16" height="10" rx="5" fill="#888" class="arm-right"/>
+      <rect x="50" y="100" width="20" height="8" rx="3" fill="#fff" class="book"/>
+    </svg>
+    <svg class="person day5" id="person5" viewBox="0 0 120 160">
+      <ellipse cx="60" cy="50" rx="20" ry="22" fill="#ffe0b2" class="head"/>
+      <rect x="45" y="72" width="30" height="40" rx="12" fill="#e53935"/>
+      <rect x="55" y="112" width="10" height="28" rx="5" fill="#888"/>
+      <rect x="30" y="90" width="16" height="10" rx="5" fill="#888" class="arm-left"/>
+      <rect x="74" y="90" width="16" height="10" rx="5" fill="#888" class="arm-right"/>
+      <rect x="100" y="60" width="10" height="40" rx="4" fill="#fff"/>
+    </svg>
+    <svg class="person day6" id="person6" viewBox="0 0 120 160">
+      <ellipse cx="60" cy="50" rx="20" ry="22" fill="#ffe0b2" class="head"/>
+      <rect x="45" y="72" width="30" height="40" rx="12" fill="#00bcd4"/>
+      <rect x="55" y="112" width="10" height="28" rx="5" fill="#888"/>
+      <rect x="30" y="90" width="16" height="10" rx="5" fill="#888" class="arm-left"/>
+      <rect x="74" y="90" width="16" height="10" rx="5" fill="#888" class="arm-right"/>
+    </svg>
+    <svg class="person day7" id="person7" viewBox="0 0 120 160">
+      <ellipse cx="60" cy="50" rx="20" ry="22" fill="#ffe0b2" class="head"/>
+      <rect x="45" y="72" width="30" height="40" rx="12" fill="#ff9800"/>
+      <rect x="55" y="112" width="10" height="28" rx="5" fill="#888"/>
+      <rect x="30" y="90" width="16" height="10" rx="5" fill="#888" class="arm-left"/>
+      <rect x="74" y="90" width="16" height="10" rx="5" fill="#888" class="arm-right"/>
+    </svg>
+    <svg class="person day8" id="person8" viewBox="0 0 120 160">
+      <ellipse cx="60" cy="50" rx="20" ry="22" fill="#ffe0b2" class="head"/>
+      <rect x="45" y="72" width="30" height="40" rx="12" fill="#607d8b"/>
+      <rect x="55" y="112" width="10" height="28" rx="5" fill="#888"/>
+      <rect x="30" y="90" width="16" height="10" rx="5" fill="#888" class="arm-left"/>
+      <rect x="74" y="90" width="16" height="10" rx="5" fill="#888" class="arm-right"/>
+      <circle cx="60" cy="50" r="24" fill="none" stroke="#222" stroke-width="3" stroke-dasharray="6 6"/>
+    </svg>
+    <svg class="person day9" id="person9" viewBox="0 0 120 160">
+      <ellipse cx="60" cy="50" rx="20" ry="22" fill="#ffe0b2" class="head"/>
+      <rect x="45" y="72" width="30" height="40" rx="12" fill="#6d4c41"/>
+      <rect x="55" y="112" width="10" height="28" rx="5" fill="#888"/>
+      <rect x="30" y="90" width="16" height="10" rx="5" fill="#888" class="arm-left"/>
+      <rect x="74" y="90" width="16" height="10" rx="5" fill="#888" class="arm-right"/>
+    </svg>
+    <svg class="person day10" id="person10" viewBox="0 0 120 160">
+      <ellipse cx="60" cy="50" rx="20" ry="22" fill="#ffe0b2" class="head"/>
+      <rect x="45" y="72" width="30" height="40" rx="12" fill="#f44336"/>
+      <rect x="55" y="112" width="10" height="28" rx="5" fill="#888"/>
+      <rect x="30" y="90" width="16" height="10" rx="5" fill="#888" class="arm-left"/>
+      <rect x="74" y="90" width="16" height="10" rx="5" fill="#888" class="arm-right"/>
+      <ellipse cx="60" cy="140" rx="18" ry="6" fill="#ffd54f"/>
+    </svg>
+  </div>
+
+  <div class="progress-container">
+    <div class="progress-bar">
+      <div class="progress-fill" id="progressFill"></div>
+    </div>
+  </div>
+
+  <div class="progress-text" id="progressText">Progress: 0%</div>
+
+  <div class="buttons">
+    <button id="backBtn">Back</button>
+    <button id="nextBtn">Next Day</button>
+  </div>
+
+  <div id="congratsMessage" class="congrats-message">
+    <h2>🎉 Progress Complete! 🎉</h2>
+    <p>Your model is now ready 👏</p>
+  </div>
+
+  <script>
+    // DOM elements
+    const dayTitle = document.getElementById('dayTitle');
+    const progressFill = document.getElementById('progressFill');
+    const progressText = document.getElementById('progressText');
+    const sky = document.getElementById('sky');
+    const sun = document.getElementById('sun');
+    const stars = document.getElementById('stars');
+    const backBtn = document.getElementById('backBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    const personSvgs = Array.from({length:10}, (_,i)=>document.getElementById('person'+(i+1)));
+
+    // Generate random stars for night
+    function createStars() {
+      let html = '';
+      for (let i = 0; i < 32; i++) {
+        const x = Math.random() * 390;
+        const y = Math.random() * 170;
+        html += `<div class='star' style='left:${x}px;top:${y}px;'></div>`;
+      }
+      stars.innerHTML = html;
+    }
+    createStars();
+
+    let currentDay = 0; // 0-based (Day 1)
+    let animating = false;
+    let sunAngle = 0; // degrees
+    let moonAngle = 180; // always sunAngle + 180
+    let orbitAnimId = null;
+
+    function celebrateCompletion() {
+      const congratsMessage = document.getElementById('congratsMessage');
+      congratsMessage.style.display = 'block';
+      
+      // Launch confetti
+      confetti({
+        particleCount: 150,
+        spread: 100,
+        origin: { y: 0.6 },
+        colors: ['#2196F3', '#4CAF50', '#FFC107', '#E91E63']
+      });
+
+      // Launch more confetti after a small delay for a continuous effect
+      setTimeout(() => {
+        confetti({
+          particleCount: 150,
+          spread: 160,
+          origin: { y: 0.7 }
+        });
+      }, 500);
+    }
+
+    function updateUI() {
+      const day = currentDay + 1;
+      let percentage = currentDay * 10;
+      // Console log progress
+      if (currentDay <= 10) {
+        if (currentDay < 10)
+          console.log(`day ${day} : ${percentage}%`);
+        else {
+          console.log(`day 10 : 100%, "Congrats, your model is ready :)"`);
+          celebrateCompletion();
+        }
+      }
+      dayTitle.textContent = `Day ${day}`;
+      progressFill.style.width = `${percentage}%`;
+      progressText.textContent = currentDay === 10 ? 'Training complete. The AI is ready!' : `Progress: ${percentage}%`;
+      // Show only the current person
+      personSvgs.forEach((svg, idx) => {
+        svg.classList.toggle('active', idx === currentDay);
+      });
+      // Button states: only disable at min/max, not during animation
+      backBtn.disabled = currentDay === 0;
+      nextBtn.disabled = currentDay === 10;
+      // Theme: light for day, dark for night
+      if (sky.classList.contains('night')) {
+        document.body.style.background = '#181c2a';
+        document.body.style.color = '#eee';
+        dayTitle.style.color = '#ffe066';
+        progressText.style.color = '#ffe066';
+      } else {
+        document.body.style.background = '#fff';
+        document.body.style.color = '#222';
+        dayTitle.style.color = '';
+        progressText.style.color = '#333';
+      }
+    }
+
+    // Animate sun: up (day), then down (night), then switch sky
+    function animateDayNight(nextDay) {
+      if (animating) return;
+      animating = true;
+      const duration = 3000; // 3 seconds for a full day/night cycle
+      const start = performance.now();
+      const startAngle = sunAngle;
+      // Each day is a full 360° rotation
+      const endAngle = startAngle + 360;
+      const startDay = currentDay;
+      const endDay = nextDay;
+      
+      function animate(now) {
+        let elapsed = now - start;
+        // Use easeInOutQuad for smoother animation
+        let t = Math.min(elapsed / duration, 1);
+        t = t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+        // Interpolate sun angle
+        let angle = startAngle + (endAngle - startAngle) * t;
+        let moonA = (angle + 180) % 360;
+        setOrbitPositions(angle, moonA);
+        // Interpolate progress bar and day label
+        let dayProgress = startDay + (endDay - startDay) * t;
+        let percentage = dayProgress * 10;
+        dayTitle.textContent = `Day ${Math.round(dayProgress + 1)}`;
+        progressFill.style.width = `${percentage}%`;
+        progressText.textContent = endDay === 10 && t === 1 ? 'Training complete. The AI is ready!' : `Progress: ${Math.round(percentage)}%`;
+        personSvgs.forEach((svg, idx) => {
+          svg.classList.toggle('active', Math.round(dayProgress) === idx);
+        });
+        // Theme: light for day, dark for night
+        if ((angle % 360) >= 180) {
+          sky.classList.add('night');
+          sun.classList.add('night');
+          document.body.style.background = '#181c2a';
+          document.body.style.color = '#eee';
+          dayTitle.style.color = '#ffe066';
+          progressText.style.color = '#ffe066';
+        } else {
+          sky.classList.remove('night');
+          sun.classList.remove('night');
+          document.body.style.background = '#fff';
+          document.body.style.color = '#222';
+          dayTitle.style.color = '';
+          progressText.style.color = '#333';
+        }
+        if (t < 1) {
+          orbitAnimId = requestAnimationFrame(animate);
+        } else {
+          sunAngle = endAngle % 360;
+          moonAngle = (sunAngle + 180) % 360;
+          currentDay = nextDay;
+          updateUI();
+          animating = false;
+        }
+      }
+      orbitAnimId = requestAnimationFrame(animate);
+    }
+
+    function setOrbitPositions(sunDeg, moonDeg) {
+      // Sun
+      const sunOrbit = document.getElementById('sunOrbit');
+      sunOrbit.style.transform = `rotate(${sunDeg}deg)`;
+      // Moon
+      const moonOrbit = document.getElementById('moonOrbit');
+      moonOrbit.style.transform = `rotate(${moonDeg}deg)`;
+      // Theme switch at 180deg
+      if ((sunDeg % 360) >= 180) {
+        sky.classList.add('night');
+        sun.classList.add('night');
+      } else {
+        sky.classList.remove('night');
+        sun.classList.remove('night');
+      }
+    }
+
+    backBtn.onclick = () => {
+      if (currentDay > 0 && !animating) {
+        animateDayNight(currentDay - 1);
+      }
+    };
+    nextBtn.onclick = () => {
+      if (currentDay < 10 && !animating) {
+        animateDayNight(currentDay + 1);
+      }
+    };
+
+    // Set initial state
+    setOrbitPositions(0, 180);
+    updateUI();
+  </script>
+</body>
+</html>
